@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 # does the day of the week affect how many accidents occur on a given day?
 
 class DataCleanser:
@@ -7,6 +8,7 @@ class DataCleanser:
         self.file = file
         self.averages = {}
         self.loadfile()
+        self.calculations()
 
     def loadfile(self):
         # reads csv then formats for specific columns
@@ -24,10 +26,9 @@ class DataCleanser:
         # clean data, count occurrences of each time slot
         self.data_timeofday = self.data["Time"].value_counts()
         self.data_timeofday = self.data_timeofday.sort_index()
-        
+
         # put into a dictionary
         self.dayofweek = {
-            "type": "bar",
             "x_axis": self.days,
             "x_axis_title": "Day of the Week (Day)",
             "y_axis": self.data_dayofweek.values,
@@ -36,38 +37,38 @@ class DataCleanser:
         }
         
         self.timeofday = {
-            "type": "line",
             "x_axis": self.data_timeofday.index.astype(str),
             "x_axis_title": "Time of Day (Hour:Minutes)",
             "y_axis": self.data_timeofday.values,
             "y_axis_title": "Number of Accidents",
             "graph_title": "Number of Accidents per Time of Day"
         }
-
+        
+    def calculations(self):
         # calculate averages
         self.averages["day_mean"] = round(self.data_dayofweek.mean(),2)
         self.averages["day_median"] = round(self.data_dayofweek.median(), 2)
 
         self.averages["time_mean"] = round(self.data_timeofday.mean(), 2)
-        self.averages["time_median"] = round(self.data_timeofday.median(), 2)
+        self.averages["time_median"] = round(self.data_timeofday.median(), 2)        
         
+
     def graph(self, dataset):
-        # change plot type based on type
-        match dataset["type"]:
-            case "bar":
-                plt.bar(dataset["x_axis"], dataset["y_axis"])
+        plt.plot(dataset["x_axis"], dataset["y_axis"])
+        plt.fill_between(dataset["x_axis"], dataset["y_axis"], color="grey", alpha=0.4)
 
-            case "line":
-                plt.plot(dataset["x_axis"], dataset["y_axis"])
-
-            case _:
-                raise "Invalid Option"
+        # formulate line of best fit
+        bestfit = np.polyfit(range(len(dataset["x_axis"])), dataset["y_axis"], 1)
+        polynomial = np.poly1d(bestfit)
+        plt.plot(dataset["x_axis"], polynomial(range(len(dataset["x_axis"]))))
 
         # styling and labels
         plt.xlabel(dataset["x_axis_title"])
         plt.xticks(rotation=90) 
         plt.ylabel(dataset["y_axis_title"])
         plt.title(dataset["graph_title"])
+        plt.grid(axis = "y")
+        
         plt.show()
 
     def __str__(self):
@@ -84,6 +85,12 @@ class DataCleanser:
 
 if __name__ == "__main__":
     data = DataCleanser("Traffic.csv")
-    #data.graph(data.timeofday)
-    #data.graph(data.dayofweek)
-    print(data)
+    showGraph = input("Would you like to show the graphs? (y/n): ")
+
+    if (showGraph == "y" or showGraph == "Y"):
+        data.graph(data.timeofday)
+        data.graph(data.dayofweek)
+
+    showTables = input("Would you like to show the tables and calculated values? (y/n): ")
+    if (showTables == "y" or showTables == "Y"):
+        print(data)
